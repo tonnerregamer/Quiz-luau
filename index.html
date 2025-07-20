@@ -175,9 +175,13 @@
             color: white;
             border: none;
         }
-        .navigation-buttons button.restart-button:hover {
+        .navigation-buttons button.restart-button:hover:not(:disabled) {
             background-color: #4b5563;
             box-shadow: 0 4px 10px rgba(107, 114, 128, 0.3);
+        }
+        .navigation-buttons button.restart-button:disabled {
+            background-color: #a0aec0; /* Lighter gray for disabled */
+            cursor: not-allowed;
         }
         .score-display {
             font-size: 1.8rem;
@@ -572,7 +576,8 @@ print("Fin du script")`,
         let score = 0;
         let selectedOption = null;
         let quizCompleted = false;
-        let isSubmitPhase = true; // New state variable: true for "Valider", false for "Suivante"
+        let quizStarted = false; // Track if quiz has been started
+        let isSubmitPhase = true; // true for "Valider", false for "Suivante"
 
         // Get DOM elements
         const quizContainer = document.getElementById('quizContainer');
@@ -593,34 +598,105 @@ print("Fin du script")`,
         const copyFeedbackElement = document.getElementById('copyFeedback');
         const restartButton = document.getElementById('restartButton');
 
+        const LOCAL_STORAGE_KEY = 'luauQuizProgress';
+        const QUIZ_SHARE_URL = 'https://tonnerregamer.github.io/Quiz-luau/'; // User provided URL
+
         /**
-         * Initializes the quiz state and shows the welcome screen.
+         * Saves current quiz progress to local storage.
+         */
+        function saveProgress() {
+            const progress = {
+                currentQuestionIndex: currentQuestionIndex,
+                score: score,
+                quizStarted: quizStarted,
+                quizCompleted: quizCompleted
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
+        }
+
+        /**
+         * Loads quiz progress from local storage.
+         * @returns {object|null} The loaded progress object or null if none exists.
+         */
+        function loadProgress() {
+            const savedProgress = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedProgress) {
+                return JSON.parse(savedProgress);
+            }
+            return null;
+        }
+
+        /**
+         * Clears quiz progress from local storage.
+         */
+        function clearProgress() {
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+        }
+
+        /**
+         * Initializes the quiz state and shows the appropriate screen (welcome or resume).
          */
         function initializeQuiz() {
+            const progress = loadProgress();
+
+            // Reset all state variables to their initial values
             currentQuestionIndex = 0;
             score = 0;
             selectedOption = null;
             quizCompleted = false;
-            isSubmitPhase = true; // Reset to submit phase
+            quizStarted = false;
+            isSubmitPhase = true; // Always start in submit phase for a new question
             feedbackText.textContent = '';
             explanationBox.classList.add('hidden');
             submitButton.disabled = true;
-            copyFeedbackElement.style.display = 'none'; // Hide copy feedback
-
-            welcomeScreen.classList.remove('hidden');
-            questionDisplay.classList.add('hidden');
-            resultDisplay.classList.add('hidden');
+            copyFeedbackElement.style.display = 'none';
 
             totalQuestionsSpan.textContent = quizData.length;
+
+            if (progress && progress.quizStarted) {
+                // If there's saved progress, restore state
+                quizStarted = true;
+                currentQuestionIndex = progress.currentQuestionIndex;
+                score = progress.score;
+                quizCompleted = progress.quizCompleted;
+
+                if (quizCompleted) {
+                    // Quiz was completed, show results and allow restart
+                    showResults();
+                    restartButton.disabled = false; // Enable restart after completion
+                } else {
+                    // Quiz was in progress, resume it
+                    welcomeScreen.classList.add('hidden');
+                    questionDisplay.classList.remove('hidden');
+                    loadQuestion();
+                    restartButton.disabled = true; // Disable restart if quiz is in progress
+                }
+                // Disable start button if quiz has already been started (even if completed)
+                startButton.disabled = true;
+            } else {
+                // No progress, show welcome screen
+                welcomeScreen.classList.remove('hidden');
+                questionDisplay.classList.add('hidden');
+                resultDisplay.classList.add('hidden');
+                startButton.disabled = false; // Enable start button
+                restartButton.disabled = true; // Disable restart if no progress
+            }
         }
 
         /**
          * Starts the quiz by hiding the welcome screen and loading the first question.
          */
         function startQuiz() {
+            quizStarted = true;
+            quizCompleted = false; // Ensure it's false when starting
+            currentQuestionIndex = 0; // Start from the first question
+            score = 0; // Reset score
+            saveProgress(); // Save initial state
             welcomeScreen.classList.add('hidden');
             questionDisplay.classList.remove('hidden');
             loadQuestion();
+            startButton.disabled = true; // Disable start button once quiz begins
+            restartButton.disabled = true; // Disable restart button once quiz begins
         }
 
         /**
@@ -631,7 +707,6 @@ print("Fin du script")`,
                 const currentQuestion = quizData[currentQuestionIndex];
                 questionText.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
 
-                // Display code snippet if available, otherwise hide the block
                 if (currentQuestion.code) {
                     codeSnippet.textContent = currentQuestion.code;
                     codeSnippet.classList.remove('hidden');
@@ -658,6 +733,9 @@ print("Fin du script")`,
                 submitButton.disabled = true; // Disabled until an option is selected
                 isSubmitPhase = true; // Set to submit phase
             } else {
+                // If all questions are answered, show results
+                quizCompleted = true;
+                saveProgress(); // Save final state
                 showResults();
             }
         }
@@ -668,17 +746,15 @@ print("Fin du script")`,
          * @param {string} option - The text content of the selected option.
          */
         function selectOption(button, option) {
-            // Remove 'selected' class from all options
             Array.from(optionsContainer.children).forEach(btn => {
                 btn.classList.remove('selected');
             });
 
-            // Add 'selected' class to the clicked button
             button.classList.add('selected');
             selectedOption = option;
-            submitButton.disabled = false; // Enable submit button
-            feedbackText.textContent = ''; // Clear feedback when new option is selected
-            explanationBox.classList.add('hidden'); // Hide explanation if user re-selects
+            submitButton.disabled = false;
+            feedbackText.textContent = '';
+            explanationBox.classList.add('hidden');
         }
 
         /**
@@ -686,26 +762,23 @@ print("Fin du script")`,
          */
         function checkAnswer() {
             if (selectedOption === null) {
-                // This should not happen if submit button is disabled until selection
                 return;
             }
 
             const currentQuestion = quizData[currentQuestionIndex];
             const isCorrect = (selectedOption === currentQuestion.answer);
 
-            // Disable all option buttons after submission
             Array.from(optionsContainer.children).forEach(btn => {
                 btn.disabled = true;
             });
 
-            // Highlight correct/incorrect options
             Array.from(optionsContainer.children).forEach(btn => {
                 if (btn.textContent === currentQuestion.answer) {
                     btn.classList.add('correct');
                 } else if (btn.textContent === selectedOption && !isCorrect) {
                     btn.classList.add('incorrect');
                 }
-                btn.classList.remove('selected'); // Remove selected highlight
+                btn.classList.remove('selected');
             });
 
             if (isCorrect) {
@@ -713,18 +786,19 @@ print("Fin du script")`,
                 feedbackText.textContent = 'Correct !';
                 feedbackText.classList.remove('incorrect');
                 feedbackText.classList.add('correct');
-                explanationBox.classList.add('hidden'); // Hide explanation if correct
+                explanationBox.classList.add('hidden');
             } else {
                 feedbackText.textContent = `Incorrect.`;
                 feedbackText.classList.remove('correct');
                 feedbackText.classList.add('incorrect');
                 explanationBox.innerHTML = `<strong>Explication :</strong> ${currentQuestion.explanation}`;
-                explanationBox.classList.remove('hidden'); // Show explanation
+                explanationBox.classList.remove('hidden');
             }
 
             submitButton.textContent = 'Question Suivante';
-            submitButton.disabled = false; // Enable button for next question
+            submitButton.disabled = false;
             isSubmitPhase = false; // Switch to next question phase
+            saveProgress(); // Save progress after checking answer
         }
 
         /**
@@ -732,12 +806,20 @@ print("Fin du script")`,
          */
         function nextQuestion() {
             currentQuestionIndex++;
-            selectedOption = null; // Reset selected option for the next question
-            // Re-enable all option buttons for the next question
+            selectedOption = null;
+
             Array.from(optionsContainer.children).forEach(btn => {
                 btn.disabled = false;
             });
-            loadQuestion();
+
+            if (currentQuestionIndex < quizData.length) {
+                loadQuestion();
+            } else {
+                // If all questions are answered, show results
+                quizCompleted = true;
+                saveProgress(); // Save final state
+                showResults();
+            }
         }
 
         /**
@@ -766,13 +848,13 @@ print("Fin du script")`,
          * Handles sharing the score.
          */
         function shareScore() {
-            const shareText = `J'ai obtenu ${score}/${quizData.length} au Quiz Luau Roblox Studio ! ${getScoreMessage(score, quizData.length)}.`;
+            const shareText = `J'ai obtenu ${score}/${quizData.length} au Quiz Luau Roblox Studio ! ${getScoreMessage(score, quizData.length)}\n${QUIZ_SHARE_URL}`;
 
             if (navigator.share) {
                 navigator.share({
                     title: 'Mon score au Quiz Luau Roblox Studio',
                     text: shareText,
-                    url: window.location.href // Current URL of the quiz
+                    url: QUIZ_SHARE_URL
                 }).then(() => {
                     // console.log('Score partagé avec succès!');
                 }).catch((error) => {
@@ -812,7 +894,6 @@ print("Fin du script")`,
             document.body.removeChild(textArea);
         }
 
-
         /**
          * Displays the final score and the restart button.
          */
@@ -821,19 +902,22 @@ print("Fin du script")`,
             resultDisplay.classList.remove('hidden');
             finalScoreSpan.textContent = score;
             scoreMessageElement.textContent = getScoreMessage(score, quizData.length);
-            quizCompleted = true;
+            restartButton.disabled = false; // Enable restart button after quiz completion
         }
 
         // Event Listeners
         startButton.addEventListener('click', startQuiz);
         submitButton.addEventListener('click', () => {
-            if (isSubmitPhase) { // Use the state variable
+            if (isSubmitPhase) {
                 checkAnswer();
             } else {
                 nextQuestion();
             }
         });
-        restartButton.addEventListener('click', initializeQuiz);
+        restartButton.addEventListener('click', () => {
+            clearProgress(); // Clear local storage on restart
+            initializeQuiz(); // Re-initialize to show welcome screen
+        });
         shareScoreButton.addEventListener('click', shareScore);
 
         // Initialize the quiz when the page loads
@@ -841,3 +925,4 @@ print("Fin du script")`,
     </script>
 </body>
 </html>
+
