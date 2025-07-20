@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Luau Roblox Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Ensure box-sizing is consistent across all elements */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Vibrant gradient background */
+            background: linear-gradient(to right bottom, #6d28d9, #9333ea); /* Purple gradient */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Responsive padding for the body */
+            padding: 0.5rem; /* Smaller padding on very small screens */
+            /* Tailwind's sm breakpoint is 640px */
+            @media (min-width: 640px) {
+                padding: 1rem;
+            }
+            overflow-x: hidden; /* Explicitly prevent horizontal scrolling of the body */
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Stronger shadow */
+            padding: 1.5rem; /* Responsive padding */
+            max-width: 700px; /* Slightly wider for code snippets */
+            width: 100%;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+            /* Responsive padding for container */
+            @media (min-width: 640px) {
+                padding: 2.5rem;
+            }
+        }
+        .question-text {
+            font-size: 1.3rem; /* Adjusted for mobile */
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #334155; /* Darker text for question */
+            text-align: left; /* Align question text to left */
+            /* Larger font on bigger screens */
+            @media (min-width: 640px) {
+                font-size: 1.5rem;
+            }
+        }
+        .code-block {
+            background-color: #e2e8f0; /* Light gray for code background */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.875rem; /* text-sm */
+            text-align: left;
+            overflow-x: auto; /* Allow horizontal scrolling for long lines WITHIN the block */
+            white-space: pre; /* Preserve whitespace and line breaks, no wrapping */
+            word-wrap: normal; /* Do not break words */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Inner shadow for depth */
+            border: 1px solid #cbd5e1; /* Subtle border */
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 0.75rem;
+            border: 2px solid #a78bfa; /* Purple border for options */
+            border-radius: 0.75rem; /* Rounded buttons */
+            background-color: #ede9fe; /* Lighter purple background for options */
+            color: #5b21b6; /* Darker purple text for options */
+            font-size: 1.05rem; /* Adjusted for mobile */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            /* Larger font on bigger screens */
+            @media (min-width: 640px) {
+                font-size: 1.1rem;
+            }
+        }
+        .options-container button:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #d8b4fe; /* Hover effect: slightly darker purple */
+            border-color: #8b5cf6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .options-container button.selected {
+            background-color: #8b5cf6; /* Blue for selected */
+            border-color: #6d28d9;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+        }
+        .options-container button.correct {
+            background-color: #10b981; /* Green for correct */
+            border-color: #059669;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        .options-container button.incorrect {
+            background-color: #ef4444; /* Red for incorrect */
+            border-color: #dc2626;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+        .feedback-text {
+            margin-top: 1rem;
+            font-size: 1.05rem; /* Adjusted for mobile */
+            font-weight: 600;
+            /* Larger font on bigger screens */
+            @media (min-width: 640px) {
+                font-size: 1.1rem;
+            }
+        }
+        .feedback-text.correct {
+            color: #10b981; /* Green for correct feedback */
+        }
+        .feedback-text.incorrect {
+            color: #ef4444; /* Red for incorrect feedback */
+        }
+        /* Styling for the explanation box */
+        #explanationBox {
+            background-color: #fefce8; /* Light yellow */
+            border-left: 5px solid #fcd34d; /* Yellow border */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #4b5563;
+            text-align: left;
+        }
+        .navigation-buttons {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+        }
+        .navigation-buttons button {
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            flex-grow: 1; /* Allow buttons to grow */
+            min-width: 150px; /* Ensure buttons don't get too small */
+        }
+        .navigation-buttons button.submit-button {
+            background-color: #3b82f6; /* Blue for submit */
+            color: white;
+            border: none;
+        }
+        .navigation-buttons button.submit-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+        .navigation-buttons button.submit-button:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+        .navigation-buttons button.restart-button {
+            background-color: #6b7280; /* Gray for restart */
+            color: white;
+            border: none;
+        }
+        .navigation-buttons button.restart-button:hover {
+            background-color: #4b5563;
+            box-shadow: 0 4px 10px rgba(107, 114, 128, 0.3);
+        }
+        .score-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e40af; /* Dark blue for score */
+            margin-top: 2rem;
+        }
+        #scoreMessage {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #4b5563;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        #shareScoreButton {
+            background-color: #1d4ed8; /* Darker blue for share */
+            color: white;
+            border: none;
+            margin-top: 1rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(29, 78, 216, 0.3);
+        }
+        #shareScoreButton:hover {
+            background-color: #1e40af;
+            box-shadow: 0 6px 12px rgba(29, 78, 216, 0.4);
+        }
+        #copyFeedback {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #065f46; /* Green for success */
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container" id="quizContainer">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Quiz Luau Roblox Studio</h1>
+
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="text-center">
+            <p class="text-xl text-gray-700 mb-8">Testez vos connaissances en Luau et Roblox Studio !</p>
+            <button id="startButton" class="bg-purple-600 text-white px-8 py-4 rounded-lg text-xl font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 quiz-button">
+                Démarrer le Quiz
+            </button>
+        </div>
+
+        <!-- Quiz Display -->
+        <div id="questionDisplay" class="hidden">
+            <p id="questionText" class="question-text"></p>
+            <pre id="codeSnippet" class="code-block hidden"></pre> <!-- Code snippet display -->
+            <div id="optionsContainer" class="options-container">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+            <p id="feedbackText" class="feedback-text"></p>
+            <div id="explanationBox" class="hidden"></div> <!-- Explanation box -->
+            <div class="navigation-buttons">
+                <button id="submitButton" class="submit-button" disabled>Valider la réponse</button>
+            </div>
+        </div>
+
+        <!-- Result Display -->
+        <div id="resultDisplay" class="hidden">
+            <p class="score-display">Votre score final : <span id="finalScore"></span> / <span id="totalQuestions"></span></p>
+            <p id="scoreMessage" class="text-lg text-gray-700 mt-4 mb-6"></p>
+            <button id="shareScoreButton">Partager mon score</button>
+            <p id="copyFeedback" class="text-green-600 mt-2"></p>
+            <div class="navigation-buttons">
+                <button id="restartButton" class="restart-button">Recommencer le quiz</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array of Luau quiz questions, options, correct answers, and detailed explanations
+        const quizData = [
+            // Questions Simples (1-10) - 100% Pratiques
+            {
+                question: "Quel sera le résultat affiché par ce code Luau ?",
+                code: `local health = 100
+print(health)`,
+                options: ["health", "100", "nil", "Erreur"],
+                answer: "100",
+                explanation: "Ce code initialise une variable locale `health` à la valeur 100, puis utilise la fonction `print()` pour afficher le contenu de cette variable dans la console de sortie de Roblox Studio. Le résultat direct sera donc la valeur numérique 100."
+            },
+            {
+                question: "Que fait ce code à une pièce nommée 'Part' dans le `workspace` ?",
+                code: `local part = workspace.Part
+part.Transparency = 0.5`,
+                options: ["Change sa couleur en gris", "La rend semi-transparente", "La rend invisible", "La détruit"],
+                answer: "La rend semi-transparente",
+                explanation: "Ce code accède à une instance de `Part` nommée 'Part' située directement dans le `workspace` (l'espace de jeu). La propriété `Transparency` d'une `Part` contrôle son opacité. Une valeur de 0.5 signifie que la pièce sera 50% transparente, la rendant semi-transparente."
+            },
+            {
+                question: "Qu'affichera ce code ?",
+                code: `local isDay = true
+if isDay then
+  print("Il fait jour")
+end`,
+                options: ["Il fait jour", "Rien", "true", "Erreur"],
+                answer: "Il fait jour",
+                explanation: "Ce code déclare une variable booléenne `isDay` et l'initialise à `true`. L'instruction `if isDay then` vérifie si la valeur de `isDay` est vraie. Puisqu'elle est `true`, le bloc de code à l'intérieur du `if` est exécuté, ce qui affiche la chaîne de caractères \"Il fait jour\" dans la console."
+            },
+            {
+                question: "Quel est le résultat de cette opération de concaténation ?",
+                code: `print("Hello" .. " " .. "World")`,
+                options: ["Hello World", "HelloWorld", "Hello World (avec guillemets)", "Erreur"],
+                answer: "Hello World",
+                explanation: "L'opérateur `..` est l'opérateur de concaténation de chaînes en Luau. Il est utilisé pour joindre deux ou plusieurs chaînes de caractères en une seule. Dans cet exemple, \"Hello\" est joint à un espace (\" \"), puis à \"World\", résultant en la chaîne \"Hello World\"."
+            },
+            {
+                question: "Qu'affichera ce code ?",
+                code: `local num = 7
+print(num % 2)`,
+                options: ["3.5", "1", "0", "Erreur"],
+                answer: "1",
+                explanation: "L'opérateur `%` en Luau est l'opérateur modulo. Il renvoie le reste de la division entière du premier opérande par le second. Ici, 7 divisé par 2 donne un quotient de 3 et un reste de 1. La fonction `print()` affichera donc 1."
+            },
+            {
+                question: "Qu'affichera ce code ?",
+                code: `local myBool = false
+if not myBool then
+  print("Vrai")
+end`,
+                options: ["Faux", "Vrai", "nil", "Erreur"],
+                answer: "Vrai",
+                explanation: "Ce code initialise `myBool` à `false`. L'opérateur `not` inverse la valeur booléenne de son opérande. `not false` est évalué à `true`. Par conséquent, la condition `if not myBool then` est vraie, et la chaîne \"Vrai\" est affichée dans la console."
+            },
+            {
+                question: "Qu'affichera ce code ?",
+                code: `local speed = 50
+local maxSpeed = 100
+print(speed < maxSpeed)`,
+                options: ["50", "100", "true", "false"],
+                answer: "true",
+                explanation: "Ce code compare deux nombres en utilisant l'opérateur de comparaison `<` (inférieur à). Puisque la valeur de `speed` (50) est bien inférieure à la valeur de `maxSpeed` (100), l'expression `speed < maxSpeed` est évaluée à `true` (vrai). C'est cette valeur booléenne qui sera affichée."
+            },
+            {
+                question: "Qu'affichera ce code ?",
+                code: `local function greet()
+  print("Bonjour !")
+end
+greet()`,
+                options: ["greet()", "Bonjour !", "function", "Rien"],
+                answer: "Bonjour !",
+                explanation: "Ce code définit une fonction locale nommée `greet`. Cette fonction contient une seule instruction : `print(\"Bonjour !\")`. La ligne suivante, `greet()`, appelle cette fonction. L'appel de la fonction exécute l'instruction `print`, ce qui affiche \"Bonjour !\" dans la console."
+            },
+            {
+                question: "Qu'affichera ce code ?",
+                code: `local score = 0
+score = score + 10
+print(score)`,
+                options: ["0", "10", "score", "Erreur"],
+                answer: "10",
+                explanation: "Ce code initialise une variable locale `score` à 0. Ensuite, l'instruction `score = score + 10` ajoute 10 à la valeur actuelle de `score`, la mettant à jour à 10. Enfin, `print(score)` affiche la nouvelle valeur de `score`, qui est 10."
+            },
+            {
+                question: "Que fait ce code ?",
+                code: `local part = Instance.new("Part")
+part.Parent = workspace
+part.Size = Vector3.new(5, 5, 5)`,
+                options: ["Crée une pièce de taille 0x0x0", "Crée une pièce de taille 5x5x5 dans le workspace", "Supprime une pièce existante", "Change la position d'une pièce"],
+                answer: "Crée une pièce de taille 5x5x5 dans le workspace",
+                explanation: "Ce code effectue les actions suivantes :\n1. `local part = Instance.new(\"Part\")`: Crée une nouvelle instance d'objet de type `Part` en mémoire.\n2. `part.Parent = workspace`: Place cette nouvelle `Part` dans l'environnement de jeu visible, le `workspace`.\n3. `part.Size = Vector3.new(5, 5, 5)`: Définit les dimensions de la pièce à 5 unités sur les axes X, Y et Z, la rendant de taille 5x5x5."
+            },
+
+            // Questions Moyennes (11-20) - 100% Pratiques
+            {
+                question: "Quel sera le résultat affiché par ce code Luau ?",
+                code: `local t = {1, 2, 3, 4, 5}
+local sum = 0
+for i, v in ipairs(t) do
+    sum = sum + v
+end
+print(sum)`,
+                options: ["15", "10", "5", "Erreur"],
+                answer: "15",
+                explanation: "Ce code utilise une boucle `for` avec `ipairs()` pour itérer sur une table numérique `t`. `ipairs()` garantit l'itération sur les indices numériques consécutifs (1, 2, 3, etc.). À chaque itération, la valeur `v` de l'élément est ajoutée à `sum`. La somme de 1 + 2 + 3 + 4 + 5 est 15."
+            },
+            {
+                question: "Quel est le rôle principal de `RemoteEvent` et `RemoteFunction` dans Roblox Studio ?",
+                code: null,
+                options: ["Gérer les animations", "Permettre la communication entre le client et le serveur", "Stocker des données de jeu", "Créer des interfaces utilisateur"],
+                answer: "Permettre la communication entre le client et le serveur",
+                explanation: "Les `RemoteEvent` et `RemoteFunction` sont des objets fondamentaux dans Roblox Studio pour la communication entre les scripts s'exécutant sur le serveur et ceux s'exécutant sur les clients des joueurs. Ils sont essentiels pour les jeux multijoueurs, permettant au serveur d'envoyer des informations aux clients et vice-versa, de manière contrôlée et sécurisée."
+            },
+            {
+                question: "Quel sera le résultat affiché par ce code Luau ?",
+                code: `local dict = {a = 10, b = 20, c = 30}
+local count = 0
+for k, v in pairs(dict) do
+    count = count + 1
+end
+print(count)`,
+                options: ["0", "1", "3", "Erreur"],
+                answer: "3",
+                explanation: "Ce code utilise une boucle `for` avec `pairs()` pour itérer sur une table utilisée comme un dictionnaire (`dict`). `pairs()` itère sur toutes les paires clé-valeur de la table, qu'elles soient numériques ou de chaîne. À chaque itération, la variable `count` est incrémentée. Puisque le dictionnaire `dict` contient 3 paires clé-valeur (`a`, `b`, `c`), la boucle s'exécutera 3 fois, et `count` affichera 3."
+            },
+            {
+                question: "Quelle est la différence principale entre `ipairs` et `pairs` en Luau ?",
+                code: null,
+                options: ["`ipairs` itère sur les tableaux numériques, `pairs` sur les dictionnaires.", "`ipairs` est plus rapide, `pairs` est plus lent.", "`ipairs` est pour les serveurs, `pairs` pour les clients.", "Il n'y a pas de différence."],
+                answer: "`ipairs` itère sur les tableaux numériques, `pairs` sur les dictionnaires.",
+                explanation: "`ipairs()` est utilisé pour itérer sur les éléments d'une table qui se comportent comme un tableau (indices numériques consécutifs à partir de 1), s'arrêtant au premier `nil`. `pairs()` est utilisé pour itérer sur toutes les paires clé-valeur d'une table, qu'elles soient numériques ou de chaîne, et l'ordre d'itération n'est pas garanti. C'est la distinction fondamentale entre les deux."
+            },
+            {
+                question: "Comment s'appelle le service utilisé pour sauvegarder et charger les données des joueurs de manière persistante ?",
+                code: null,
+                options: ["SaveService", "DataStoreService", "StorageService", "PersistenceService"],
+                answer: "DataStoreService",
+                explanation: "Le `DataStoreService` est le service de Roblox Studio spécifiquement conçu pour gérer la persistance des données. Il permet aux développeurs de sauvegarder les données des joueurs (comme leur score, leur inventaire, leur progression) et de les recharger lors de sessions de jeu ultérieures, assurant ainsi que les informations ne sont pas perdues."
+            },
+            {
+                question: "Quel sera le résultat affiché par ce code Luau ?",
+                code: `local value: number = "hello"
+print(typeof(value))`,
+                options: ["string", "number", "nil", "Erreur (type mismatch)"],
+                answer: "string",
+                explanation: "En Luau, les annotations de type (`: number`) sont principalement utilisées pour l'analyse statique du code (par exemple, par l'éditeur de Roblox Studio) afin d'aider au débogage et à l'auto-complétion. Cependant, Luau reste un langage dynamiquement typé à l'exécution. Cela signifie que la variable `value` contiendra réellement la chaîne de caractères \"hello\", et la fonction `typeof()` renverra le type d'exécution réel de cette valeur, qui est \"string\"."
+            },
+            {
+                question: "Dans quel cas utiliseriez-vous `task.wait()` plutôt que `wait()` ?",
+                code: null,
+                options: ["`task.wait()` est plus précis et ne souffre pas des problèmes de `wait()`.", "`task.wait()` est pour les scripts locaux, `wait()` pour les scripts de serveur.", "`wait()` est obsolète, `task.wait()` est la nouvelle méthode.", "Les deux sont identiques."],
+                answer: "`task.wait()` est plus précis et ne souffre pas des problèmes de `wait()`.",
+                explanation: "`task.wait()` est la fonction moderne et recommandée pour créer des délais en Luau. L'ancienne fonction `wait()` pouvait souffrir de problèmes de 'throttling' (ralentissement) et était moins précise, surtout sous charge. `task.wait()` s'intègre mieux avec le planificateur de tâches de Roblox, offrant une meilleure fiabilité et précision pour les délais."
+            },
+            {
+                question: "Quel sera le résultat affiché par ce code Luau ?",
+                code: `local function calculate(a, b)
+    if b == 0 then
+        error("Division par zéro !")
+    end
+    return a / b
+end
+
+local success, result = pcall(calculate, 10, 0)
+print(success)`,
+                options: ["true", "false", "10", "Erreur"],
+                answer: "false",
+                explanation: "Ce code utilise `pcall` (protected call) pour exécuter la fonction `calculate` en mode protégé. La fonction `calculate` est appelée avec `a=10` et `b=0`. Puisque `b` est 0, la fonction `error(\"Division par zéro !\")` est appelée. `pcall` intercepte cette erreur, empêchant le script de planter, et retourne `false` comme premier argument (`success`), indiquant que l'appel a échoué. C'est cette valeur `false` qui sera affichée."
+            },
+            {
+                question: "Quelle est la principale différence entre un `Script` et un `LocalScript` dans Roblox Studio ?",
+                code: null,
+                options: ["Les `Scripts` s'exécutent sur le serveur, les `LocalScripts` sur le client.", "Les `Scripts` peuvent accéder à l'interface utilisateur, les `LocalScripts` non.", "Les `Scripts` sont plus rapides, les `LocalScripts` sont plus lents.", "Il n'y a pas de différence fonctionnelle."],
+                answer: "Les `Scripts` s'exécutent sur le serveur, les `LocalScripts` sur le client.",
+                explanation: "Les `Script`s'exécutent sur le serveur et leur logique affecte tous les joueurs présents dans le jeu. Les `LocalScript`s'exécutent sur le client de chaque joueur individuel et sont principalement utilisés pour la logique liée à l'interface utilisateur (GUI) ou aux actions spécifiques à un joueur (comme le mouvement de la caméra, les entrées utilisateur locales)."
+            },
+            {
+                question: "Quel est l'objectif du service `TweenService` ?",
+                code: null,
+                options: ["Gérer les animations de personnages", "Créer des interfaces utilisateur dynamiques", "Animer des propriétés d'instances de manière fluide", "Gérer la physique des objets"],
+                answer: "Animer des propriétés d'instances de manière fluide",
+                explanation: "`TweenService` est un service de Roblox Studio qui permet de créer des animations fluides et professionnelles en interpolant les propriétés d'une instance (comme sa position, sa taille, sa couleur, sa transparence) d'une valeur de départ à une valeur de fin sur une période de temps donnée, avec divers styles d'assouplissement (easing styles)."
+            },
+
+            // Questions Difficiles (21-30) - 100% Pratiques
+            {
+                question: "Qu'affichera le script si 'MyModule' est un ModuleScript dans `ReplicatedStorage` contenant le premier bloc de code, et le second bloc est un Script standard ?",
+                code: `-- MyModule (ModuleScript)
+local Module = {}
+function Module.add(a, b)
+  return a + b
+end
+return Module
+---
+-- Script standard
+local MyModule = require(game.ReplicatedStorage.MyModule)
+print(MyModule.add(10, 20))`,
+                options: ["Erreur", "Module", "30", "nil"],
+                answer: "30",
+                explanation: "Ce scénario démontre l'utilisation des ModuleScripts en Luau :\n1. **ModuleScript (`MyModule`)**: Il définit une table `Module` et y ajoute une fonction `add`. Il retourne ensuite cette table.\n2. **Script standard**: Il utilise `require(game.ReplicatedStorage.MyModule)` pour charger le ModuleScript. `require` retourne la table que le ModuleScript a exportée (ici, la table `Module`).\n3. Le script appelle `MyModule.add(10, 20)`, ce qui exécute la fonction `add` du module avec 10 et 20 comme arguments. La fonction retourne leur somme (30).\n4. `print(30)` affiche 30 dans la console."
+            },
+            {
+                question: "Que fait ce code à la pièce nommée 'Part' dans le `workspace` ?",
+                code: `local ts = game:GetService("TweenService")
+local part = workspace.Part
+local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local goal = {Position = Vector3.new(0, 50, 0)}
+local tween = ts:Create(part, tweenInfo, goal)
+tween:Play()`,
+                options: ["Déplace la pièce instantanément", "Anime la position de la pièce vers (0, 50, 0) en 2 secondes", "Change la couleur de la pièce", "Détruit la pièce après 2 secondes"],
+                answer: "Anime la position de la pièce vers (0, 50, 0) en 2 secondes",
+                explanation: "Ce code utilise le `TweenService` pour créer une animation fluide :\n1. `local ts = game:GetService(\"TweenService\")`: Obtient le service `TweenService`.\n2. `local part = workspace.Part`: Référence la pièce à animer.\n3. `local tweenInfo = TweenInfo.new(...)`: Définit les paramètres de l'animation : 2 secondes de durée, style d'assouplissement `Quad` et direction `Out` (ralentit à la fin).\n4. `local goal = {Position = Vector3.new(0, 50, 0)}`: Définit l'état final des propriétés de la pièce (ici, sa position).\n5. `local tween = ts:Create(part, tweenInfo, goal)`: Crée l'objet `Tween`.\n6. `tween:Play()`: Démarre l'animation. La pièce se déplacera progressivement vers la position spécifiée."
+            },
+            {
+                question: "Quel est le but de `pcall` dans ce code ?",
+                code: `local ds = game:GetService("DataStoreService"):GetDataStore("PlayerData")
+local success, data = pcall(function()
+  return ds:GetAsync("Player_123")
+end)
+if success and data then
+  print("Données chargées:", data)
+end`,
+                options: ["Pour afficher les données", "Pour sauvegarder les données", "Pour charger les données de manière sécurisée en gérant les erreurs", "Pour convertir les données"],
+                answer: "Pour charger les données de manière sécurisée en gérant les erreurs",
+                explanation: "`pcall` (protected call) est une fonction essentielle pour la gestion des erreurs en Luau. Les appels aux DataStores (`GetAsync`, `SetAsync`) peuvent échouer pour diverses raisons (problèmes de réseau, limites de requêtes, etc.).\n- `pcall` exécute la fonction donnée (ici, `ds:GetAsync(\"Player_123\")`) en mode protégé.\n- Si la fonction s'exécute sans erreur, `success` sera `true`, et `data` contiendra le résultat.\n- Si une erreur se produit, `success` sera `false`, et `data` contiendra le message d'erreur. Cela empêche le script de s'arrêter brutalement et permet de gérer l'erreur de manière élégante."
+            },
+            {
+                question: "Quand la fonction connectée à `Heartbeat` s'exécute-t-elle avec ce code ?",
+                code: `local RunService = game:GetService("RunService")
+RunService.Heartbeat:Connect(function(dt)
+  print("FPS:", 1/dt)
+end)`,
+                options: ["Au démarrage du jeu", "Chaque frame, avant la simulation physique", "Chaque frame, après la simulation physique et le rendu", "Toutes les secondes"],
+                answer: "Chaque frame, après la simulation physique et le rendu",
+                explanation: "`RunService` est un service qui fournit des événements liés au cycle de vie du jeu.\n- `RunService.Heartbeat` est un événement qui se déclenche à chaque frame, mais spécifiquement *après* que la simulation physique et le rendu de la frame aient été mis à jour.\n- L'argument `dt` (delta time) représente le temps écoulé depuis la dernière exécution de `Heartbeat`. Cet événement est idéal pour les logiques qui doivent s'exécuter de manière cohérente avec le taux de rafraîchissement du jeu, comme la mise à jour d'éléments visuels ou de compteurs de FPS."
+            },
+            {
+                question: "Que fait `task.spawn` dans ce code ?",
+                code: `local function longTask()
+  for i = 1, 1000000 do end -- Simule une longue tâche
+  print("Tâche longue terminée")
+end
+task.spawn(longTask)
+print("Le script continue")`,
+                options: ["Exécute `longTask` après 1 million de secondes", "Exécute `longTask` dans un nouveau thread, sans bloquer le script principal", "Exécute `longTask` de manière synchrone, bloquant le script", "Ne fait rien"],
+                answer: "Exécute `longTask` dans un nouveau thread, sans bloquer le script principal",
+                explanation: "`task.spawn()` est une fonction moderne et recommandée pour l'exécution asynchrone en Luau. Elle permet de démarrer l'exécution d'une fonction dans un nouveau 'thread' (une coroutine) sans bloquer le thread de script actuel.\n- Dans cet exemple, `longTask` simule une opération qui prend beaucoup de temps.\n- `task.spawn(longTask)` lance `longTask` en arrière-plan.\n- Le script principal continue immédiatement avec `print(\"Le script continue\")`, sans attendre la fin de `longTask`. Cela est crucial pour maintenir la fluidité du jeu en évitant les blocages du thread principal."
+            },
+            {
+                question: "Qu'affichera le script si 'MyModule' est un ModuleScript dans `ReplicatedStorage` contenant le premier bloc de code, et le second bloc est un Script standard ?",
+                code: `-- MyModule (ModuleScript)
+local Module = {}
+function Module.subtract(a, b)
+  return a - b
+end
+return Module
+---
+-- Script standard
+local MyModule = require(game.ReplicatedStorage.MyModule)
+print(MyModule.subtract(50, 20))`,
+                options: ["Erreur", "Module", "30", "nil"],
+                answer: "30",
+                explanation: "Ce scénario est similaire à la question 21, démontrant la modularité du code en Luau :\n1. Le ModuleScript `MyModule` définit une fonction `subtract` et exporte la table `Module`.\n2. Le Script standard importe cette table via `require()`.\n3. Il appelle `MyModule.subtract(50, 20)`. La fonction `subtract` calcule `50 - 20`, ce qui donne 30.\n4. `print(30)` affiche 30 dans la console."
+            },
+            {
+                question: "Que fait ce code à une pièce nommée 'Part' dans le `workspace` ?",
+                code: `local ts = game:GetService("TweenService")
+local part = workspace.Part
+local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+local goal = {Color = Color3.fromRGB(255, 0, 0)}
+local tween = ts:Create(part, tweenInfo, goal)
+tween:Play()`,
+                options: ["Change sa couleur en rouge instantanément", "Anime la couleur de la pièce vers le rouge en 1 seconde", "Déplace la pièce", "Détruit la pièce"],
+                answer: "Anime la couleur de la pièce vers le rouge en 1 seconde",
+                explanation: "Ce code utilise `TweenService` pour animer la couleur d'une pièce :\n1. `local ts = game:GetService(\"TweenService\")`: Obtient le service.\n2. `local part = workspace.Part`: Référence la pièce.\n3. `local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.In)`: Définit l'animation pour durer 1 seconde, avec un style linéaire (vitesse constante).\n4. `local goal = {Color = Color3.fromRGB(255, 0, 0)}`: Spécifie que la couleur finale doit être rouge (RGB 255,0,0).\n5. `ts:Create(...)` et `tween:Play()`: Crée et démarre l'animation. La couleur de la pièce passera progressivement à l'état rouge."
+            },
+            {
+                question: "Quel est le but de `xpcall` dans ce code ?",
+                code: `local function riskyOperation()
+  error("Quelque chose a mal tourné!")
+end
+local success, err = xpcall(riskyOperation, debug.traceback)
+if not success then
+  print("Erreur interceptée avec trace:", err)
+end`,
+                options: ["Pour exécuter une opération risquée sans gestion d'erreur", "Pour exécuter une opération risquée et obtenir le résultat", "Pour exécuter une opération risquée en mode protégé et obtenir une trace de la pile en cas d'erreur", "Pour exécuter une opération risquée de manière asynchrone"],
+                answer: "Pour exécuter une opération risquée en mode protégé et obtenir une trace de la pile en cas d'erreur",
+                explanation: "`xpcall` (extended protected call) est une version améliorée de `pcall`. Elle permet non seulement d'exécuter une fonction en mode protégé (capturant les erreurs), mais aussi de spécifier une *fonction de gestion d'erreurs* (le deuxième argument).\n- Ici, `debug.traceback` est utilisé comme gestionnaire d'erreurs. Si `riskyOperation` déclenche une erreur, `debug.traceback` est appelée et renvoie une chaîne de caractères contenant la trace complète de la pile d'appels (où l'erreur s'est produite).\n- Cela est extrêmement utile pour le débogage, car cela fournit des informations détaillées sur l'origine de l'erreur sans faire planter le script."
+            },
+            {
+                question: "Quand la fonction connectée à `Stepped` s'exécute-t-elle avec ce code ?",
+                code: `local RunService = game:GetService("RunService")
+RunService.Stepped:Connect(function(dt)
+  print("Mise à jour avant physique:", dt)
+end)`,
+                options: ["Au démarrage du jeu", "Chaque frame, avant la simulation physique", "Chaque frame, après la simulation physique et le rendu", "Toutes les secondes"],
+                answer: "Chaque frame, avant la simulation physique",
+                explanation: "`RunService.Stepped` est un événement qui se déclenche à chaque frame, mais spécifiquement *avant* que la simulation physique du jeu ne soit exécutée. L'argument `dt` représente le temps écoulé depuis la dernière exécution de `Stepped`.\n- Cet événement est idéal pour les logiques qui doivent précéder les calculs physiques, comme la mise à jour de la position ou de la vélocité d'un personnage avant que le moteur physique ne le déplace ou ne le fasse interagir avec l'environnement."
+            },
+            {
+                question: "Que fait `task.defer` dans ce code ?",
+                code: `local function delayedPrint()
+  print("Ceci s'affiche après le reste du script.")
+end
+print("Début du script")
+task.defer(delayedPrint)
+print("Fin du script")`,
+                options: ["Exécute `delayedPrint` immédiatement", "Exécute `delayedPrint` après un délai aléatoire", "Exécute `delayedPrint` sur le prochain cycle de planification du moteur, après que le script actuel ait terminé", "Ne fait rien"],
+                answer: "Exécute `delayedPrint` sur le prochain cycle de planification du moteur, après que le script actuel ait terminé",
+                explanation: "`task.defer()` est une fonction qui planifie l'exécution d'une fonction pour le prochain 'tick' du moteur Roblox, mais seulement *après* que le thread de script actuel ait terminé son exécution. Cela signifie que `\"Début du script\"` et `\"Fin du script\"` seront affichés en premier, puis `\"Ceci s'affiche après le reste du script.\"` s'affichera. C'est utile pour reporter des tâches non urgentes sans bloquer le flux d'exécution immédiat."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+        let quizCompleted = false;
+        let isSubmitPhase = true; // New state variable: true for "Valider", false for "Suivante"
+
+        // Get DOM elements
+        const quizContainer = document.getElementById('quizContainer');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const startButton = document.getElementById('startButton');
+        const questionDisplay = document.getElementById('questionDisplay');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const questionText = document.getElementById('questionText');
+        const codeSnippet = document.getElementById('codeSnippet');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const submitButton = document.getElementById('submitButton');
+        const feedbackText = document.getElementById('feedbackText');
+        const explanationBox = document.getElementById('explanationBox');
+        const finalScoreSpan = document.getElementById('finalScore');
+        const totalQuestionsSpan = document.getElementById('totalQuestions');
+        const scoreMessageElement = document.getElementById('scoreMessage');
+        const shareScoreButton = document.getElementById('shareScoreButton');
+        const copyFeedbackElement = document.getElementById('copyFeedback');
+        const restartButton = document.getElementById('restartButton');
+
+        /**
+         * Initializes the quiz state and shows the welcome screen.
+         */
+        function initializeQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedOption = null;
+            quizCompleted = false;
+            isSubmitPhase = true; // Reset to submit phase
+            feedbackText.textContent = '';
+            explanationBox.classList.add('hidden');
+            submitButton.disabled = true;
+            copyFeedbackElement.style.display = 'none'; // Hide copy feedback
+
+            welcomeScreen.classList.remove('hidden');
+            questionDisplay.classList.add('hidden');
+            resultDisplay.classList.add('hidden');
+
+            totalQuestionsSpan.textContent = quizData.length;
+        }
+
+        /**
+         * Starts the quiz by hiding the welcome screen and loading the first question.
+         */
+        function startQuiz() {
+            welcomeScreen.classList.add('hidden');
+            questionDisplay.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        /**
+         * Loads and displays the current question, its code snippet (if any), and options.
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex < quizData.length) {
+                const currentQuestion = quizData[currentQuestionIndex];
+                questionText.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+                // Display code snippet if available, otherwise hide the block
+                if (currentQuestion.code) {
+                    codeSnippet.textContent = currentQuestion.code;
+                    codeSnippet.classList.remove('hidden');
+                } else {
+                    codeSnippet.classList.add('hidden');
+                    codeSnippet.textContent = ''; // Clear content if hidden
+                }
+
+                optionsContainer.innerHTML = ''; // Clear previous options
+                feedbackText.textContent = ''; // Clear feedback
+                explanationBox.classList.add('hidden'); // Hide explanation for new question
+
+                // Create buttons for each option
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('rounded-lg', 'focus:outline-none', 'focus:ring-2', 'focus:ring-purple-500', 'focus:ring-opacity-50');
+                    button.addEventListener('click', () => selectOption(button, option));
+                    optionsContainer.appendChild(button);
+                });
+
+                // Reset submit button for new question
+                submitButton.textContent = 'Valider la réponse';
+                submitButton.disabled = true; // Disabled until an option is selected
+                isSubmitPhase = true; // Set to submit phase
+            } else {
+                showResults();
+            }
+        }
+
+        /**
+         * Handles the selection of an option.
+         * @param {HTMLElement} button - The button element that was clicked.
+         * @param {string} option - The text content of the selected option.
+         */
+        function selectOption(button, option) {
+            // Remove 'selected' class from all options
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Add 'selected' class to the clicked button
+            button.classList.add('selected');
+            selectedOption = option;
+            submitButton.disabled = false; // Enable submit button
+            feedbackText.textContent = ''; // Clear feedback when new option is selected
+            explanationBox.classList.add('hidden'); // Hide explanation if user re-selects
+        }
+
+        /**
+         * Checks the selected answer against the correct answer and provides feedback.
+         */
+        function checkAnswer() {
+            if (selectedOption === null) {
+                // This should not happen if submit button is disabled until selection
+                return;
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            const isCorrect = (selectedOption === currentQuestion.answer);
+
+            // Disable all option buttons after submission
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.disabled = true;
+            });
+
+            // Highlight correct/incorrect options
+            Array.from(optionsContainer.children).forEach(btn => {
+                if (btn.textContent === currentQuestion.answer) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === selectedOption && !isCorrect) {
+                    btn.classList.add('incorrect');
+                }
+                btn.classList.remove('selected'); // Remove selected highlight
+            });
+
+            if (isCorrect) {
+                score++;
+                feedbackText.textContent = 'Correct !';
+                feedbackText.classList.remove('incorrect');
+                feedbackText.classList.add('correct');
+                explanationBox.classList.add('hidden'); // Hide explanation if correct
+            } else {
+                feedbackText.textContent = `Incorrect.`;
+                feedbackText.classList.remove('correct');
+                feedbackText.classList.add('incorrect');
+                explanationBox.innerHTML = `<strong>Explication :</strong> ${currentQuestion.explanation}`;
+                explanationBox.classList.remove('hidden'); // Show explanation
+            }
+
+            submitButton.textContent = 'Question Suivante';
+            submitButton.disabled = false; // Enable button for next question
+            isSubmitPhase = false; // Switch to next question phase
+        }
+
+        /**
+         * Moves to the next question or shows results if the quiz is finished.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            selectedOption = null; // Reset selected option for the next question
+            // Re-enable all option buttons for the next question
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.disabled = false;
+            });
+            loadQuestion();
+        }
+
+        /**
+         * Determines the final message based on the score.
+         * @param {number} finalScore - The player's final score.
+         * @param {number} totalQuestions - The total number of questions.
+         * @returns {string} The message corresponding to the score.
+         */
+        function getScoreMessage(finalScore, totalQuestions) {
+            const percentage = (finalScore / totalQuestions) * 100;
+
+            if (percentage === 100) {
+                return "Félicitations ! Vous êtes un maître Luau incontesté ! 🏆";
+            } else if (percentage >= 90) {
+                return "Excellent travail ! Vous êtes un expert en Luau ! ✨";
+            } else if (percentage >= 70) {
+                return "Impressionnant ! Vous avez une très bonne compréhension de Luau. 👍";
+            } else if (percentage >= 40) {
+                return "Bon début ! Quelques révisions et vous maîtriserez Luau. Keep going ! 💪";
+            } else {
+                return "Peut mieux faire ! Continuez à pratiquer, vous y arriverez ! 📚";
+            }
+        }
+
+        /**
+         * Handles sharing the score.
+         */
+        function shareScore() {
+            const shareText = `J'ai obtenu ${score}/${quizData.length} au Quiz Luau Roblox Studio ! ${getScoreMessage(score, quizData.length)}.`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Mon score au Quiz Luau Roblox Studio',
+                    text: shareText,
+                    url: window.location.href // Current URL of the quiz
+                }).then(() => {
+                    // console.log('Score partagé avec succès!');
+                }).catch((error) => {
+                    // console.error('Erreur lors du partage:', error);
+                    copyScoreToClipboard(shareText); // Fallback to copy
+                });
+            } else {
+                copyScoreToClipboard(shareText); // Fallback to copy
+            }
+        }
+
+        /**
+         * Copies text to clipboard.
+         * @param {string} text - The text to copy.
+         */
+        function copyScoreToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; // Avoid scrolling to bottom
+            textArea.style.left = "-9999px"; // Hide off-screen
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copyFeedbackElement.textContent = 'Score copié dans le presse-papiers !';
+                copyFeedbackElement.style.display = 'block';
+                setTimeout(() => {
+                    copyFeedbackElement.style.display = 'none';
+                }, 3000);
+            } catch (err) {
+                // console.error('Impossible de copier le texte:', err);
+                copyFeedbackElement.textContent = 'Échec de la copie. Veuillez copier manuellement.';
+                copyFeedbackElement.style.color = '#ef4444'; // Red for error
+                copyFeedbackElement.style.display = 'block';
+            }
+            document.body.removeChild(textArea);
+        }
+
+
+        /**
+         * Displays the final score and the restart button.
+         */
+        function showResults() {
+            questionDisplay.classList.add('hidden');
+            resultDisplay.classList.remove('hidden');
+            finalScoreSpan.textContent = score;
+            scoreMessageElement.textContent = getScoreMessage(score, quizData.length);
+            quizCompleted = true;
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startQuiz);
+        submitButton.addEventListener('click', () => {
+            if (isSubmitPhase) { // Use the state variable
+                checkAnswer();
+            } else {
+                nextQuestion();
+            }
+        });
+        restartButton.addEventListener('click', initializeQuiz);
+        shareScoreButton.addEventListener('click', shareScore);
+
+        // Initialize the quiz when the page loads
+        window.onload = initializeQuiz;
+    </script>
+</body>
+</html>
