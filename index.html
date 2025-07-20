@@ -798,21 +798,27 @@ print("Fin du script")`,
          * Handles sharing the score.
          */
         function shareScore() {
-            const shareText = `J'ai obtenu ${score}/${quizData.length} au Quiz Luau Roblox Studio ! ${getScoreMessage(score, quizData.length)}\n${QUIZ_SHARE_URL}`;
+            const baseShareText = `J'ai obtenu ${score}/${quizData.length} au Quiz Luau Roblox Studio ! ${getScoreMessage(score, quizData.length)}.`;
+            let finalShareText;
 
             if (navigator.share) {
+                // For navigator.share, the URL is passed separately, so don't include it in the text.
+                finalShareText = baseShareText;
                 navigator.share({
                     title: 'Mon score au Quiz Luau Roblox Studio',
-                    text: shareText,
+                    text: finalShareText,
                     url: QUIZ_SHARE_URL
                 }).then(() => {
                     // console.log('Score partagé avec succès!');
                 }).catch((error) => {
                     // console.error('Erreur lors du partage:', error);
-                    copyScoreToClipboard(shareText); // Fallback to copy
+                    // If native share fails, fallback to copy, and for copy, we need the URL in the text.
+                    copyScoreToClipboard(baseShareText + '\n' + QUIZ_SHARE_URL);
                 });
             } else {
-                copyScoreToClipboard(shareText); // Fallback to copy
+                // For clipboard copy, the URL must be part of the text.
+                finalShareText = baseShareText + '\n' + QUIZ_SHARE_URL;
+                copyScoreToClipboard(finalShareText);
             }
         }
 
